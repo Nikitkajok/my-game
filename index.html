@@ -277,7 +277,7 @@
         <div class="ttt-board" id="ttt-board"></div>
     </div>
 
-    <!-- РАЗДЕЛ: ТЕТРИС (Просто визуальная заглушка) -->
+    <!-- РАЗДЕЛ: ТЕТРИС (Визуальная заглушка) -->
     <div id="game-tetris" class="game-section">
         <div class="tetris-container">
             <canvas id="tetris" width="240" height="480"></canvas>
@@ -288,8 +288,8 @@
     </div>
 
     <script>
-        // АДРЕС НАШЕГО PYTHON-СЕРВЕРА
-        const API_URL = 'http://127.0.0.1:5000/api';
+        // ВАЖНО: Теперь игра отправляет данные на сервер Render в интернете!
+        const API_URL = 'https://my-game-tvvz.onrender.com/api';
 
         let currentUser = null;
         let stats = { rating: 0, wins: 0, losses: 0, draws: 0 };
@@ -302,13 +302,14 @@
             btn.classList.add('active');
         }
 
-        // --- АВТОРИЗАЦИЯ (Связь с Python) ---
+        // --- АВТОРИЗАЦИЯ (Связь с сервером) ---
         async function loginUser() {
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
             const errorEl = document.getElementById('auth-error');
 
             if (!user || !pass) return errorEl.innerText = "Заполните все поля";
+            errorEl.innerText = "Загрузка..."; // Показываем, что идет запрос
 
             try {
                 const res = await fetch(`${API_URL}/login`, {
@@ -326,7 +327,7 @@
                     errorEl.innerText = data.error; 
                 }
             } catch (e) {
-                errorEl.innerText = "Ошибка: Сервер Python не запущен!";
+                errorEl.innerText = "Ошибка сервера. Подождите 30 сек. и попробуйте снова.";
             }
         }
 
@@ -336,6 +337,7 @@
             const errorEl = document.getElementById('auth-error');
 
             if (!user || !pass) return errorEl.innerText = "Придумайте имя и пароль";
+            errorEl.innerText = "Создание аккаунта...";
 
             try {
                 const res = await fetch(`${API_URL}/register`, {
@@ -348,11 +350,12 @@
                 if (res.ok) {
                     alert("Аккаунт создан! Теперь нажмите 'Войти'.");
                     document.getElementById('password').value = '';
+                    errorEl.innerText = "";
                 } else {
                     errorEl.innerText = data.error;
                 }
             } catch (e) {
-                errorEl.innerText = "Ошибка: Сервер Python не запущен!";
+                errorEl.innerText = "Ошибка сервера. Подождите 30 сек. и попробуйте снова.";
             }
         }
 
@@ -404,7 +407,6 @@
 
         function handleTTTClick(e) {
             const idx = parseInt(e.target.dataset.index);
-            // Проверяем, что игра идет, клетка пуста, сейчас ход игрока и он авторизован
             if (gameState[idx] !== '' || !gameActive || currentPlayer !== 'X' || !currentUser) return;
             
             makeTTTMove(idx, 'X');
@@ -459,7 +461,6 @@
             }
         }
 
-        // Отправка результата на Python для сохранения в БД
         async function saveGameResult(outcome) {
             if (!currentUser) return;
             try {
@@ -469,13 +470,13 @@
                     body: JSON.stringify({ 
                         username: currentUser, 
                         outcome: outcome,
-                        difficulty: difficultySelect.value // Передаем выбранную сложность
+                        difficulty: difficultySelect.value
                     })
                 });
                 const data = await res.json();
                 if (res.ok) {
                     stats = data;
-                    updateStatsUI(); // Обновляем цифры на экране
+                    updateStatsUI();
                 }
             } catch (e) {
                 console.error("Не удалось сохранить статистику", e);
@@ -484,7 +485,7 @@
 
         function botTTTMove() {
             if (!gameActive || currentPlayer !== 'O') return;
-            // Простой рандомный бот
+            // Простой бот
             let avail = gameState.map((v, i) => v === '' ? i : null).filter(v => v !== null);
             if (!avail.length) return;
             const idx = avail[Math.floor(Math.random() * avail.length)];
