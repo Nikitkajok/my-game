@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Игровой Портал</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #1e1e2f 0%, #2a2a40 100%);
+            --panel-bg: rgba(255, 255, 255, 0.05);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --primary: #6c5ce7;
+            --primary-hover: #5a4bcf;
+            --danger: #ff7675;
+            --text-main: #f5f6fa;
+            --text-muted: #a4b0be;
+            --accent-cyan: #00cec9;
+            --accent-yellow: #fdcb6e;
+            --accent-red: #ff7675;
+            --accent-green: #55efc4;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        /* --- ЭКРАН АВТОРИЗАЦИИ --- */
+        .auth-screen {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        }
+
+        .auth-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .auth-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .auth-box h2 { margin-bottom: 20px; font-size: 1.8rem; }
+
+        .auth-box input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--panel-border);
+            background: rgba(0,0,0,0.2);
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .auth-box input:focus { border-color: var(--primary); }
+
+        .auth-error {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            height: 20px;
+            font-weight: 700;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn:hover { background: var(--primary-hover); }
+        .btn:active { transform: scale(0.98); }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+        }
+        .btn-outline:hover { background: rgba(255,255,255,0.1); }
+
+        /* --- НАВИГАЦИЯ --- */
+        .nav-menu {
+            background: rgba(30, 30, 47, 0.9);
+            backdrop-filter: blur(10px);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .nav-btn {
+            background: none; border: none; color: var(--text-muted);
+            font-family: inherit; font-size: 1.1rem; font-weight: 700;
+            padding: 10px 20px; margin: 0 5px; cursor: pointer;
+            border-radius: 8px; transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover { color: var(--text-main); }
+        .nav-btn.active {
+            color: var(--text-main); background: var(--primary);
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+        }
+
+        .user-info {
+            position: absolute;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700;
+        }
+
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 700;
+        }
+
+        /* --- КОНТЕЙНЕРЫ ИГР --- */
+        .game-section {
+            display: none; flex-direction: column; align-items: center;
+            width: 100%; max-width: 800px; padding: 20px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .game-section.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- КРЕСТИКИ-НОЛИКИ --- */
+        .stats-panel {
+            background: var(--panel-bg); border: 1px solid var(--panel-border);
+            padding: 15px 20px; border-radius: 16px;
+            margin-bottom: 20px; display: flex; gap: 20px; text-align: center;
+        }
+
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-value { font-size: 1.5rem; font-weight: 900; color: var(--accent-yellow); }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+        .controls { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .status { font-size: 1.2rem; margin-bottom: 15px; font-weight: 700; height: 25px; }
+
+        .ttt-board {
+            display: grid; grid-template-columns: repeat(3, 90px); grid-template-rows: repeat(3, 90px);
+            gap: 10px; background: var(--panel-bg); border: 1px solid var(--panel-border);
+            padding: 15px; border-radius: 20px;
+        }
+
+        .ttt-cell {
+            background: rgba(255, 255, 255, 0.05); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3rem; font-weight: 900; cursor: pointer; user-select: none;
+            transition: background 0.2s;
+        }
+
+        .ttt-cell:hover { background: rgba(255,255,255,0.1); }
+        .ttt-cell.player { color: var(--accent-cyan); }
+        .ttt-cell.bot { color: var(--accent-red); }
+        .ttt-cell.win { background: rgba(85, 239, 196, 0.2); color: var(--accent-green); }
+
+        /* --- ТЕТРИС (Заглушка для красоты) --- */
+        .tetris-container {
+            display: flex; gap: 20px; align-items: flex-start;
+            background: var(--panel-bg); border: 1px solid var(--panel-border);
+            padding: 20px; border-radius: 20px;
+        }
+        canvas { background: #12121c; border: 2px solid var(--panel-border); border-radius: 12px; }
+
+        @media (max-width: 700px) {
+            .nav-menu { flex-wrap: wrap; }
+            .user-info { position: static; width: 100%; justify-content: center; margin-top: 10px; }
+            .ttt-board { grid-template-columns: repeat(3, 80px); grid-template-rows: repeat(3, 80px); }
+            .ttt-cell { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ЭКРАН ВХОДА / РЕГИСТРАЦИИ -->
+    <div class="auth-screen" id="auth-screen">
+        <div class="auth-box">
+            <h2 id="auth-title">Вход в игру</h2>
+            <div class="auth-error" id="auth-error"></div>
+            
+            <input type="text" id="username" placeholder="Имя (логин)" maxlength="15">
+            <input type="password" id="password" placeholder="Пароль" maxlength="20">
+            
+            <button class="btn" onclick="loginUser()">Войти</button>
+            <button class="btn btn-outline" onclick="registerUser()">Зарегистрироваться</button>
+        </div>
+    </div>
+
+    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
+    <div class="nav-menu">
+        <button class="nav-btn active" onclick="switchGame('tictactoe', this)">Крестики-нолики</button>
+        <button class="nav-btn" onclick="switchGame('tetris', this)">Тетрис</button>
+        
+        <div class="user-info" id="user-info" style="display: none;">
+            <span id="current-user-name">Игрок</span>
+            <button class="logout-btn" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <!-- РАЗДЕЛ: КРЕСТИКИ-НОЛИКИ -->
+    <div id="game-tictactoe" class="game-section active">
+        <div class="stats-panel">
+            <div class="stat-item"><span class="stat-value" id="stat-rating">0</span><span class="stat-label">Рейтинг</span></div>
+            <div class="stat-item"><span class="stat-value" id="stat-wins">0</span><span class="stat-label">Победы</span></div>
+            <div class="stat-item"><span class="stat-value" id="stat-losses">0</span><span class="stat-label">Пораж.</span></div>
+            <div class="stat-item"><span class="stat-value" id="stat-draws">0</span><span class="stat-label">Ничьи</span></div>
+        </div>
+        
+        <div class="controls">
+            <select id="difficulty" style="padding: 10px; border-radius: 8px; background: #2a2a40; color: white; border: 1px solid var(--panel-border);">
+                <option value="easy">Легкий</option>
+                <option value="medium">Средний</option>
+                <option value="hard">Сложный</option>
+            </select>
+            <button class="btn" style="width: auto; margin: 0;" onclick="resetTTT()">Новая игра</button>
+        </div>
+
+        <div class="status" id="ttt-status">Ваш ход</div>
+        <div class="ttt-board" id="ttt-board"></div>
+    </div>
+
+    <!-- РАЗДЕЛ: ТЕТРИС (Просто визуальная заглушка) -->
+    <div id="game-tetris" class="game-section">
+        <div class="tetris-container">
+            <canvas id="tetris" width="240" height="480"></canvas>
+            <div>
+                <p style="color: var(--text-muted);">Тетрис находится в разработке...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // АДРЕС НАШЕГО PYTHON-СЕРВЕРА
+        const API_URL = 'http://127.0.0.1:5000/api';
+
+        let currentUser = null;
+        let stats = { rating: 0, wins: 0, losses: 0, draws: 0 };
+
+        // --- ПЕРЕКЛЮЧЕНИЕ ИГР ---
+        function switchGame(gameId, btn) {
+            document.querySelectorAll('.game-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('game-' + gameId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // --- АВТОРИЗАЦИЯ (Связь с Python) ---
+        async function loginUser() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value;
+            const errorEl = document.getElementById('auth-error');
+
+            if (!user || !pass) return errorEl.innerText = "Заполните все поля";
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    currentUser = data.username;
+                    stats = { rating: data.rating, wins: data.wins, losses: data.losses, draws: data.draws };
+                    showMainInterface();
+                } else {
+                    errorEl.innerText = data.error; 
+                }
+            } catch (e) {
+                errorEl.innerText = "Ошибка: Сервер Python не запущен!";
+            }
+        }
+
+        async function registerUser() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value;
+            const errorEl = document.getElementById('auth-error');
+
+            if (!user || !pass) return errorEl.innerText = "Придумайте имя и пароль";
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert("Аккаунт создан! Теперь нажмите 'Войти'.");
+                    document.getElementById('password').value = '';
+                } else {
+                    errorEl.innerText = data.error;
+                }
+            } catch (e) {
+                errorEl.innerText = "Ошибка: Сервер Python не запущен!";
+            }
+        }
+
+        function showMainInterface() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('user-info').style.display = 'flex';
+            document.getElementById('current-user-name').innerText = currentUser;
+            updateStatsUI();
+            resetTTT();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('user-info').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('auth-error').innerText = '';
+        }
+
+        function updateStatsUI() {
+            document.getElementById('stat-rating').innerText = stats.rating;
+            document.getElementById('stat-wins').innerText = stats.wins;
+            document.getElementById('stat-losses').innerText = stats.losses;
+            document.getElementById('stat-draws').innerText = stats.draws;
+        }
+
+        // --- ЛОГИКА КРЕСТИКОВ-НОЛИКОВ ---
+        const tttBoard = document.getElementById('ttt-board');
+        const tttStatus = document.getElementById('ttt-status');
+        const difficultySelect = document.getElementById('difficulty');
+        
+        let currentPlayer = 'X';
+        let gameState = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+
+        const winningConditions = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+        function createTTTBoard() {
+            tttBoard.innerHTML = '';
+            gameState.forEach((_, i) => {
+                const cell = document.createElement('div');
+                cell.classList.add('ttt-cell');
+                cell.dataset.index = i;
+                cell.addEventListener('click', handleTTTClick);
+                tttBoard.appendChild(cell);
+            });
+        }
+
+        function handleTTTClick(e) {
+            const idx = parseInt(e.target.dataset.index);
+            // Проверяем, что игра идет, клетка пуста, сейчас ход игрока и он авторизован
+            if (gameState[idx] !== '' || !gameActive || currentPlayer !== 'X' || !currentUser) return;
+            
+            makeTTTMove(idx, 'X');
+            if (gameActive) {
+                currentPlayer = 'O';
+                tttStatus.innerText = 'Бот думает...';
+                tttStatus.style.color = 'var(--accent-yellow)';
+                setTimeout(botTTTMove, 600);
+            }
+        }
+
+        function makeTTTMove(idx, player) {
+            gameState[idx] = player;
+            const cell = document.querySelector(`.ttt-cell[data-index="${idx}"]`);
+            cell.innerText = player;
+            cell.classList.add(player === 'X' ? 'player' : 'bot');
+            checkTTTResult();
+        }
+
+        function checkTTTResult() {
+            let won = false; let combo = [];
+            for (let c of winningConditions) {
+                if (gameState[c[0]] && gameState[c[0]] === gameState[c[1]] && gameState[c[0]] === gameState[c[2]]) {
+                    won = true; combo = c; break;
+                }
+            }
+            if (won) {
+                gameActive = false;
+                combo.forEach(i => document.querySelector(`.ttt-cell[data-index="${i}"]`).classList.add('win'));
+                if (currentPlayer === 'X') {
+                    tttStatus.innerText = 'Вы победили! 🎉'; 
+                    tttStatus.style.color = 'var(--accent-green)'; 
+                    saveGameResult('win');
+                } else {
+                    tttStatus.innerText = 'Бот победил! 🤖'; 
+                    tttStatus.style.color = 'var(--accent-red)'; 
+                    saveGameResult('lose');
+                }
+                return;
+            }
+            if (!gameState.includes('')) {
+                gameActive = false;
+                tttStatus.innerText = 'Ничья! 🤝'; 
+                tttStatus.style.color = 'var(--accent-yellow)'; 
+                saveGameResult('draw');
+                return;
+            }
+            if (currentPlayer === 'O') {
+                currentPlayer = 'X';
+                tttStatus.innerText = 'Ваш ход'; 
+                tttStatus.style.color = 'var(--text-main)';
+            }
+        }
+
+        // Отправка результата на Python для сохранения в БД
+        async function saveGameResult(outcome) {
+            if (!currentUser) return;
+            try {
+                const res = await fetch(`${API_URL}/stats`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        username: currentUser, 
+                        outcome: outcome,
+                        difficulty: difficultySelect.value // Передаем выбранную сложность
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    stats = data;
+                    updateStatsUI(); // Обновляем цифры на экране
+                }
+            } catch (e) {
+                console.error("Не удалось сохранить статистику", e);
+            }
+        }
+
+        function botTTTMove() {
+            if (!gameActive || currentPlayer !== 'O') return;
+            // Простой рандомный бот
+            let avail = gameState.map((v, i) => v === '' ? i : null).filter(v => v !== null);
+            if (!avail.length) return;
+            const idx = avail[Math.floor(Math.random() * avail.length)];
+            makeTTTMove(idx, 'O');
+        }
+
+        function resetTTT() {
+            gameState = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            currentPlayer = 'X';
+            tttStatus.innerText = 'Ваш ход';
+            tttStatus.style.color = 'var(--text-main)';
+            createTTTBoard();
+        }
+    </script>
+</body>
+</html>
